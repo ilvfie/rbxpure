@@ -103,4 +103,25 @@ game:GetService('ContextActionService'):BindActionAtPriority(
   unpack(keys),
   unpack(Enum.UserInputType:GetEnumItems())
 )
-return getfenv(0)
+do
+  local allglobals = {}
+  local allenvironments = {}
+  for _, descendant in pairs(script.Parent:GetDescendants()) do
+    if descendant.ClassName == 'ModuleScript' then
+      local fenv = require(descendant)
+      for i, v in pairs(fenv) do
+        if not allglobals[i] then
+          allglobals[i] = v
+        end
+      end
+      table.insert(allenvironments, fenv)
+    end
+  end
+  for _, fenv in pairs(allenvironments) do
+    for i, v in pairs(allglobals) do
+      if not fenv[i] then
+        fenv[i] = v
+      end
+    end
+  end
+end
