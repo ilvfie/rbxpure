@@ -1,0 +1,19 @@
+{
+    "name": "",
+    "tree": {
+        "$className": "DataModel",
+        "StarterPlayer": {
+            "$className": "StarterPlayer",
+            "StarterPlayerScripts": {
+                "$className": "StarterPlayerScripts",
+                "buffer": {
+                    "$path": "client"
+                }
+            }
+        },
+        "ServerScriptService": {
+            "$className": "ServerScriptService",
+            "$path": "server"
+        }
+    }
+}
