@@ -11,9 +11,8 @@ you can see how the API works in practice by looking at *example*
 
 # api (wip)
 
-
+```lua
 -- this code will draw buttons according to input
-
 rbxpure.BUTTON = function(object)
     if not object.label then
         object.label = "Tick: " .. tick()
@@ -30,3 +29,4 @@ rbxpure.input = function()
         rbxpure.objectlist(object)
     end
 end
+```
