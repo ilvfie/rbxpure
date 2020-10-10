@@ -1,10 +1,10 @@
 WORK IN PROGRESS
 
 # Purpose
-`rbxpure` provides a global to your code called `rbxpure` that is essentially a table that will replicate its contents over the net.
-It does this in the backend as efficiently and quickly as can be done with roblox API.
-What makes `rbxpure` powerful is that it allows this to happen without the user having to put much explicit effort.
-You can essentially just modify the table and expect everything to go swell, as long as the module is stable.
+> `rbxpure` provides a global to your code called `rbxpure` that is essentially a table that will replicate its contents over the net.
+> It does this in the backend as efficiently and quickly as can be done with roblox API.
+> What makes `rbxpure` powerful is that it allows this to happen without the user having to put much explicit effort.
+> You can essentially just modify the table and expect everything to go swell, as long as the module is stable.
 
 # Installation
 Run this in the command bar.
@@ -36,4 +36,5 @@ rbxpure._input = function()
     end
 end
 ```
-I really recommend checking out the *example* folder for a more in depth example, as it shows why everything is set up the way it is.
+> I really recommend checking out the *example* folder for a more in depth example.
+> It massively helps to explain the workflow.
