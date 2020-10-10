@@ -1,4 +1,4 @@
-rbxpure.FOO = function(object)
+rbxpure.FOOS = function(object)
 end
 rbxpure.TEXTEDITOR = function(object)
   for i, v in pairs(
