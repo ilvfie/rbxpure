@@ -1,99 +1,117 @@
-rbxpure = {}
-local callbacks = {}
+local istate = {}
+local idelta = {}
+local classfunctions = {}
+local reactivefunctions = {}
 local changes = {}
+local inputcallbacks = {}
+local canedit = false
 local recurse
+local keys = Enum.KeyCode:GetEnumItems()
+local names = {}
+_G.istate = istate
+_G.idelta = idelta
+----------------------------------------------------------------
 recurse = function(t, proxy)
   setmetatable(
     t,
     {
       __newindex = function(t, i, v)
-        if type(v) == 'table' then
-          if getmetatable(v) then
-            warn('cannot add a metatable to global')
-          elseif i:sub(1, 1) == '#' then
-            -- linked object (subject to class)
-            changes[i] = true
-            local empty = {}
-            proxy[i] = v
-            rawset(t, i, empty)
-            recurse(empty, proxy[i])
+        if type(v) == 'function' then
+          if i == 'input' then
+            table.insert(inputcallbacks, v)
+          elseif string.upper(i) == i then
+            classfunctions[i] = classfunctions[i] or {}
+            table.insert(classfunctions[i], v)
+            if not proxy[i] then
+              proxy[i] = function(object)
+                object.id = tostring(math.random())
+                for _, v in pairs(classfunctions[i]) do
+                  v(object)
+                end
+                return object
+              end
+            end
           else
-            -- object
-            local empty = {}
-            proxy[i] = v
-            rawset(t, i, empty)
-            recurse(empty, proxy[i])
+            reactivefunctions[i] = reactivefunctions[i] or {}
+            table.insert(reactivefunctions[i], v)
           end
         else
-          -- regular field
-          changes[t.id] = true
-          proxy[i] = v
+          if canedit then
+            if type(v) == 'table' then
+              warn('rbxpure: cannot directly add a table:', i)
+            else
+              changes[t.id] = true
+              proxy[i] = v
+            end
+          else
+            warn('rbxpure: can not edit in this scope:', i)
+          end
         end
       end,
       __index = function(_, i)
-        return proxy[i]
+        proxy[i] = proxy[i] or {}
+        if type(proxy[i]) == 'table' then
+          return function(toinsert)
+            if not toinsert then
+              local key, value
+              return function()
+                key, value = next(proxy[i], key)
+                return value
+              end
+            end
+            if type(toinsert) == 'table' then
+              proxy[i][toinsert.id] = toinsert
+            elseif type(toinsert) == 'string' then
+              proxy[i][toinsert] = nil
+            else
+              warn('could not')
+            end
+          end
+        else
+          return proxy[i]
+        end
       end
     }
   )
 end
-recurse(rbxpure, {})
-game:GetService('RunService'):BindToRenderStep(
-  'render',
-  Enum.RenderPriority.Input.Value - 2,
-  function()
-    for i, v in pairs(changes) do
-      for _, f in pairs(callbacks[i]) do
-        f(v)
-      end
-    end
-  end
-)
-local keys = Enum.KeyCode:GetEnumItems()
-local names = {}
+recurse(_G, {})
+----------------------------------------------------------------
 for _, v in pairs(keys) do
   local l = v.Name:lower()
   names[v.Name] = l
-  rbxpure.istate[l] = 0
-  rbxpure.idelta[l] = 0
+  istate[l] = 0
+  idelta[l] = 0
 end
-game:GetService('RunService'):BindToRenderStep(
-  'clear',
-  Enum.RenderPriority.Last.Value,
-  function()
-    for i, _ in pairs(rbxpure.idelta) do
-      rbxpure.idelta[i] = 0
-    end
-  end
-)
+----------------------------------------------------------------
 game:GetService('ContextActionService'):BindActionAtPriority(
   'input',
   function(_, is, io)
     if io.UserInputType == Enum.UserInputType.Keyboard then
       local n = names[io.KeyCode.Name]
       if is == Enum.UserInputState.Begin then
-        rbxpure.idelta[n] = 1
-        rbxpure.istate[n] = 1
+        idelta[n] = 1
+        istate[n] = 1
       else
-        rbxpure.idelta[n] = -1
-        rbxpure.istate[n] = 0
+        idelta[n] = -1
+        istate[n] = 0
       end
     elseif io.UserInputType == Enum.UserInputType.MouseMovement then
-      rbxpure.istate.mousex = io.Position.X
-      rbxpure.istate.mousey = io.Position.Y
-      rbxpure.idelta.mousex = io.Delta.X
-      rbxpure.idelta.mousey = io.Delta.Y
+      istate.mousex = io.Position.X
+      istate.mousey = io.Position.Y
+      idelta.mousex = io.Delta.X
+      idelta.mousey = io.Delta.Y
     elseif io.UserInputType == Enum.UserInputType.MouseWheel then
       if is == Enum.UserInputState.Change then
-        rbxpure.idelta.mousewheel = io.Position.Z
+        idelta.mousewheel = io.Position.Z
       end
     elseif io.UserInputType == Enum.UserInputType.MouseButton1 then
       local n = 'mousebutton1'
       if is == Enum.UserInputState.Begin then
-        rbxpure.idelta[n] = 1
-        rbxpure.istate[n] = 1
+        idelta[n] = 1
+        istate[n] = 1
       elseif is == Enum.UserInputState.End then
-        rbxpure.idelta[n] = -1
-        rbxpure.istate[n] = 0
+        idelta[n] = -1
+        istate[n] = 0
       end
     end
     return Enum.ContextActionResult.Pass
@@ -103,25 +121,27 @@ game:GetService('ContextActionService'):BindActionAtPriority(
   unpack(keys),
   unpack(Enum.UserInputType:GetEnumItems())
 )
-do
-  local allglobals = {}
-  local allenvironments = {}
-  for _, descendant in pairs(script.Parent:GetDescendants()) do
-    if descendant.ClassName == 'ModuleScript' then
-      local fenv = require(descendant)
-      for i, v in pairs(fenv) do
-        if not allglobals[i] then
-          allglobals[i] = v
-        end
-      end
-      table.insert(allenvironments, fenv)
+----------------------------------------------------------------
+game:GetService('RunService'):BindToRenderStep(
+  'main',
+  Enum.RenderPriority.Input.Value - 1,
+  function()
+    canedit = true
+    for _, v in pairs(inputcallbacks) do
+      v()
+    end
+    canedit = false
+    for i in pairs(idelta) do
+      idelta[i] = 0
     end
   end
-  for _, fenv in pairs(allenvironments) do
-    for i, v in pairs(allglobals) do
-      if not fenv[i] then
-        fenv[i] = v
-      end
+)
+----------------------------------------------------------------
+do
+  wait()
+  for _, descendant in pairs(script:GetDescendants()) do
+    if descendant.ClassName == 'ModuleScript' then
+      require(descendant)
     end
   end
 end

@@ -6,14 +6,19 @@
             "$className": "StarterPlayer",
             "StarterPlayerScripts": {
                 "$className": "StarterPlayerScripts",
-                "buffer": {
-                    "$path": "client"
+                "": {
+                    "$path": "rbxpure.client.lua",
+                    "example": {
+                        "$path": "example"
+                    }
                 }
             }
         },
         "ServerScriptService": {
             "$className": "ServerScriptService",
-            "$path": "server"
+            "": {
+                "$path": "rbxpure.server.lua"
+            }
         }
     }
 }
