@@ -1,15 +1,24 @@
+script.Parent:RemoveDefaultLoadingScreen()
 local istate = {}
 local idelta = {}
 local classfunctions = {}
 local reactivefunctions = {}
 local changes = {}
 local inputcallbacks = {}
+local proxy = {}
 local canedit = false
 local recurse
 local keys = Enum.KeyCode:GetEnumItems()
 local names = {}
 _G.istate = istate
 _G.idelta = idelta
+----------------------------------------------------------------
+for _, v in pairs(keys) do
+  local l = v.Name:lower()
+  names[v.Name] = l
+  istate[l] = 0
+  idelta[l] = 0
+end
 ----------------------------------------------------------------
 recurse = function(t, proxy)
   setmetatable(
@@ -40,7 +49,6 @@ recurse = function(t, proxy)
             if type(v) == 'table' then
               warn('rbxpure: cannot directly add a table:', i)
             else
-              changes[t.id] = true
               proxy[i] = v
             end
           else
@@ -60,11 +68,23 @@ recurse = function(t, proxy)
               end
             end
             if type(toinsert) == 'table' then
-              proxy[i][toinsert.id] = toinsert
+              if not proxy[i][toinsert.id] then
+                if not changes[i] then
+                  changes[i] = {}
+                end
+                changes[i][toinsert.id] = true
+                proxy[i][toinsert.id] = toinsert
+              end
             elseif type(toinsert) == 'string' then
-              proxy[i][toinsert] = nil
+              if proxy[i][toinsert] ~= nil then
+                if not changes[i] then
+                  changes[i] = {}
+                end
+                changes[i][toinsert.id] = true
+                proxy[i][toinsert] = nil
+              end
             else
-              warn('could not')
+              warn('rbxpure: could not')
             end
           end
         else
@@ -73,14 +93,6 @@ recurse = function(t, proxy)
       end
     }
   )
-end
-recurse(_G, {})
-----------------------------------------------------------------
-for _, v in pairs(keys) do
-  local l = v.Name:lower()
-  names[v.Name] = l
-  istate[l] = 0
-  idelta[l] = 0
 end
 ----------------------------------------------------------------
 game:GetService('ContextActionService'):BindActionAtPriority(
@@ -122,6 +134,33 @@ game:GetService('ContextActionService'):BindActionAtPriority(
   unpack(Enum.UserInputType:GetEnumItems())
 )
 ----------------------------------------------------------------
+local drawrecurse
+drawrecurse = function(schema)
+  local classname = schema.ClassName
+  if classname then
+    schema.ClassName = nil
+    local parent = schema.Parent
+    schema.Parent = nil
+    local instance = Instance.new(classname)
+    for i, v in pairs(schema) do
+      if type(i) == 'string' then
+        if typeof(instance[i]) == 'RBXScriptSignal' then
+          instance[i]:Connect(v)
+        else
+          instance[i] = v
+        end
+      end
+    end
+    instance.Parent = parent
+    for _, v in ipairs(schema) do
+      local instance1 = drawrecurse(v)
+      if instance1 then
+        instance1.Parent = instance
+      end
+    end
+    return instance
+  end
+end
 game:GetService('RunService'):BindToRenderStep(
   'main',
   Enum.RenderPriority.Input.Value - 1,
@@ -134,11 +173,26 @@ game:GetService('RunService'):BindToRenderStep(
     for i in pairs(idelta) do
       idelta[i] = 0
     end
+    for i, v in pairs(changes) do
+      for i1 in pairs(v) do
+        if reactivefunctions[i] then
+          for _, v in pairs(reactivefunctions[i]) do
+            local schema = v(proxy[i][i1])
+            if schema then
+              drawrecurse(schema)
+            else
+              warn('rbxpure: no schema')
+            end
+          end
+        end
+      end
+    end
+    changes = {}
   end
 )
 ----------------------------------------------------------------
 do
-  wait()
+  recurse(_G, proxy)
   for _, descendant in pairs(script:GetDescendants()) do
     if descendant.ClassName == 'ModuleScript' then
       require(descendant)

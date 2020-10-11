@@ -2,15 +2,12 @@
     "name": "",
     "tree": {
         "$className": "DataModel",
-        "StarterPlayer": {
-            "$className": "StarterPlayer",
-            "StarterPlayerScripts": {
-                "$className": "StarterPlayerScripts",
-                "": {
-                    "$path": "rbxpure.client.lua",
-                    "example": {
-                        "$path": "example"
-                    }
+        "ReplicatedFirst": {
+            "$className": "ReplicatedFirst",
+            "": {
+                "$path": "rbxpure.client.lua",
+                "example": {
+                    "$path": "example"
                 }
             }
         },
