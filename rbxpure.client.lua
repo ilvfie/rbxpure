@@ -1,125 +1,106 @@
 script.Parent:RemoveDefaultLoadingScreen()
 local keys = Enum.KeyCode:GetEnumItems()
-local names = {}
-local inputcallbacks = {}
+local instancedefaults = {}
 local purecallbacks = {}
-local regularcache = {}
 local changedcache = {}
+local callbacks = {}
+local passes = {}
+local names = {}
+local cache = {}
 local canedit = false
-----------------------------------------------------------------
+local draw
 for _, v in pairs(keys) do
-  local l = v.Name:lower()
-  names[v.Name] = l
-  _G[l] = 0
-  _G['_' .. l] = 0
+  local lower = v.Name:lower()
+  names[v.Name] = lower
+  _G[lower] = 0
+  _G['_' .. lower] = 0
+  _G._time = 0
+  _G.frame = -1
+  _G.time = 0
+  _G._mousemovementx = 0
+  _G._mousemovementy = 0
+  _G.mousemovementx = 0
+  _G.mousemovementy = 0
+  _G.mousebutton1 = 0
+  _G._mousebutton1 = 0
 end
 ----------------------------------------------------------------
-local drawrecurse
-drawrecurse = function(schema)
-  local classname = schema.ClassName
-  if classname then
-    local parent = schema.Parent
-    schema.ClassName = nil
-    schema.Parent = nil
-    local instance = Instance.new(classname)
-    for i, v in pairs(schema) do
-      if type(i) == 'string' then
-        if typeof(instance[i]) == 'RBXScriptSignal' then
-          instance[i]:Connect(
-            function()
-              canedit = true
-              v()
-              canedit = false
-            end
-          )
-        else
-          instance[i] = v
-        end
-      end
-    end
-    instance.Parent = parent
-    for _, v in ipairs(schema) do
-      drawrecurse(v).Parent = instance
-    end
-    return instance
-  end
-end
-----------------------------------------------------------------
-local markentity = function(entity)
-  for i in pairs(entity) do
-    if not changedcache[i] then
-      changedcache[i] = {}
-    end
-    changedcache[i][entity.id] = entity
-  end
-end
 setmetatable(
   _G,
   {
-    __call = function(_, ...)
-      local args = {...}
-      if type(args[1]) == 'table' then
-        if canedit then
-          -- add an entity
-          local entity = args[1]
-          entity.id = tostring(math.random())
-          for i in pairs(entity) do
-            if not regularcache[i] then
-              regularcache[i] = {}
-            end
-            regularcache[i][entity.id] = entity
-          end
-          local proxy = {}
-          setmetatable(
-            proxy,
-            {
-              __newindex = function(_, i, v)
-                entity[i] = v
-                if not regularcache[i] then
-                  regularcache[i] = {}
+    __call = function(_, e)
+      if canedit then
+        local id = tostring(math.random())
+        local proxy = {}
+        setmetatable(
+          proxy,
+          {
+            __newindex = function(_, i, v)
+              if v then
+                e[i] = v
+                if not cache[i] then
+                  cache[i] = {}
                 end
-                regularcache[i][entity.id] = v == nil and nil or entity
-                markentity(entity)
-              end,
-              __index = function(_, i)
-                return entity[i]
+                cache[i][id] = proxy
+                if not changedcache[i] then
+                  changedcache[i] = {}
+                end
+                changedcache[i][id] = proxy
+              else
+                e[i] = nil
+                cache[i][id] = nil
+                changedcache[i][id] = nil
+                for _, t in pairs(passes) do
+                  local a = t[id]
+                  if a then
+                    t[id] = nil
+                    a.instance:Destroy()
+                  end
+                end
               end
-            }
-          )
-          markentity(entity)
-        else
-          -- add a render object
+            end,
+            __index = e
+          }
+        )
+        for i in pairs(e) do
+          if not cache[i] then
+            cache[i] = {}
+          end
+          cache[i][id] = proxy
+          if not changedcache[i] then
+            changedcache[i] = {}
+          end
+          changedcache[i][id] = proxy
         end
-      elseif type(args[1]) == 'function' then
-        table.insert(inputcallbacks, args[1])
-        table.insert(purecallbacks, args[2])
       else
-        -- query
-        local t = newproxy(true)
-        local a = regularcache
-        local b = changedcache
-        for _, v in ipairs(args) do
-          a = a[v]
-          b = b[v]
-          if not a or not b then
-            a = {}
-            b = {}
-            break
+        warn('rbxpure: creation of entities is forbidden while pure')
+      end
+    end,
+    __newindex = function(_, i, v)
+      if canedit then
+        if type(v) == 'function' then
+          if not purecallbacks[i] then
+            purecallbacks[i] = {}
           end
+          table.insert(purecallbacks[i], v)
+        elseif v == true then
+        elseif v == nil then
+          purecallbacks[i] = {}
+        else
+          warn('rbxpure: cannot assign a value of that type to _G:', i)
         end
-        local key, value
-        local mt = getmetatable(t)
-        mt.__call = function()
-          key, value = next(a, key)
-          return value
+      else
+        warn('rbxpure: _G assignments are forbidden while pure:', i)
+      end
+    end,
+    __index = function(_, i)
+      if canedit then
+        if not cache[i] then
+          cache[i] = {}
         end
-        mt.__len = function()
-          return function()
-            key, value = next(b, key)
-            return value
-          end
-        end
-        return t
+        return cache[i]
+      else
+        warn('rbxpure: access to _G is forbidden while pure:', i)
       end
     end
   }
@@ -164,34 +145,114 @@ game:GetService('ContextActionService'):BindActionAtPriority(
   unpack(Enum.UserInputType:GetEnumItems())
 )
 ----------------------------------------------------------------
-local start = true
+draw = function(schema, pass)
+  local classname = schema.ClassName
+  if classname then
+    local parent = schema.Parent
+    schema.ClassName = nil
+    schema.Parent = nil
+    if pass.instance then
+      if pass.instance.ClassName == classname then
+        for instancekey, instancevalue in pairs(pass) do
+          if instancekey ~= 'instance' then
+            if typeof(instancevalue) == 'RBXScriptConnection' then
+              instancevalue:Disconnect()
+              pass[instancekey] = nil
+            else
+              if not schema[instancekey] then
+                if type(instancevalue) == 'table' then
+                  instancevalue.instance:Destroy()
+                else
+                  pass.instance[instancekey] = instancedefaults[classname][instancekey]
+                end
+                pass[instancekey] = nil
+              end
+            end
+          end
+        end
+      else
+        pass.instance:Destroy()
+        pass.instance = Instance.new(classname)
+      end
+    else
+      pass.instance = Instance.new(classname)
+    end
+    for i, v in pairs(schema) do
+      if type(i) == 'string' then
+        if typeof(pass.instance[i]) == 'RBXScriptSignal' then
+          pass[i] =
+            pass.instance[i]:Connect(
+            function()
+              canedit = true
+              v()
+              canedit = false
+            end
+          )
+        else
+          if not pass[i] then
+            if not instancedefaults[classname] then
+              instancedefaults[classname] = {}
+            end
+            instancedefaults[classname][i] = pass.instance[i]
+          end
+          pass[i] = v
+          pass.instance[i] = v
+        end
+      else
+        if not pass[i] then
+          pass[i] = {}
+        end
+        draw(v, pass[i]).Parent = pass.instance
+      end
+    end
+    pass.instance.Parent = parent
+    return pass.instance
+  end
+end
 game:GetService('RunService'):BindToRenderStep(
   'main',
   Enum.RenderPriority.Input.Value - 1,
   function(deltatime)
     _G.time = tick()
-    if start then
-      start = false
-      _G._time = 0
-    else
-      _G._time = deltatime
-    end
+    _G._time = deltatime
+    _G.frame = _G.frame + 1
     canedit = true
-    for _, v in ipairs(inputcallbacks) do
+    for _, v in ipairs(callbacks) do
       v()
     end
     canedit = false
-    for _, v in ipairs(purecallbacks) do
-      v()
+    for cacheid, t in pairs(changedcache) do
+      if purecallbacks[cacheid] then
+        for _, f in ipairs(purecallbacks[cacheid]) do
+          local functionid = tostring(f)
+          for entityid, v in pairs(t) do
+            if not passes[functionid] then
+              passes[functionid] = {}
+            end
+            if not passes[functionid][entityid] then
+              passes[functionid][entityid] = {}
+            end
+            draw(f(v), passes[functionid][entityid])
+          end
+        end
+      end
     end
     changedcache = {}
+    for i in pairs(_G) do
+      if i:sub(1, 1) == '_' then
+        _G[i] = 0
+      end
+    end
   end
 )
 ----------------------------------------------------------------
 do
   for _, descendant in pairs(script:GetDescendants()) do
     if descendant.ClassName == 'ModuleScript' then
-      require(descendant)
+      local f = require(descendant)
+      if f then
+        table.insert(callbacks, f)
+      end
     end
   end
 end
