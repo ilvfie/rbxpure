@@ -1,4 +1,4 @@
-<div align="center"><img width=25% src="https://i.imgur.com/yCjHmng.png"></div>
+<div align="center"><img width=25% src="https://cdn.discordapp.com/icons/412448235890802710/545ae525fbcdab5b5386e73021c3c598.png?size=512"></div>
 <h1 align="center"><a href="https://roblox-ts.com">roblox-ts</a></h1>
 <div align="center">A TypeScript-to-Luau Compiler for Roblox</div>
 <br>
