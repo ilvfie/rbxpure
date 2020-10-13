@@ -1,5 +1,7 @@
-<div align="center"><img width=10% src="https://cdn.discordapp.com/icons/412448235890802710/545ae525fbcdab5b5386e73021c3c598.png?size=512"></div>
-<h1 align="center"><a href="foo.com">rbxpure</a></h1>
+<div align="center">
+    <img width=10% src="https://cdn.discordapp.com/icons/412448235890802710/545ae525fbcdab5b5386e73021c3c598.png?size=512">
+    <h1 align="center"><a href="foo.com">rbxpure</a></h1>
+</div>
 <div align="center">a declarative framework for roblox</div>
 <br>
 <div align="center">
