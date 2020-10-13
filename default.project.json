@@ -6,8 +6,8 @@
             "$className": "ReplicatedFirst",
             "": {
                 "$path": "rbxpure.client.lua",
-                "example": {
-                    "$path": "example"
+                "": {
+                    "$path": "examples"
                 }
             }
         },
