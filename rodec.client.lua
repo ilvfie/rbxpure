@@ -1,12 +1,9 @@
 script.Parent:RemoveDefaultLoadingScreen()
 local keys = Enum.KeyCode:GetEnumItems()
 local instancedefaults = {}
-local purecallbacks = {}
-local changedcache = {}
 local callbacks = {}
-local passes = {}
-local names = {}
 local cache = {}
+local names = {}
 local canedit = false
 local draw
 for _, v in pairs(keys) do
@@ -25,6 +22,50 @@ for _, v in pairs(keys) do
   _G._mousebutton1 = 0
 end
 ----------------------------------------------------------------
+local mkindex = function(querykey)
+  cache[querykey] = {all = {}, changed = {}, callbacks = {}, instances = {}, combos = {}}
+end
+local ensureindex = function(querykey)
+  if not cache[querykey] then
+    mkindex(querykey)
+  end
+end
+local writeindex = function(querykey, id, set)
+  cache[querykey].all[id] = set
+  cache[querykey].changed[id] = set
+  if set == nil then
+    for comboname in pairs(cache[querykey].combos) do
+      cache[comboname].all[id] = set
+      cache[comboname].changed[id] = set
+    end
+  else
+    for comboname, comboreq in pairs(cache[querykey].combos) do
+      local pass = true
+      for _, k in ipairs(comboreq) do
+        if set[k] == nil then
+          pass = false
+          break
+        end
+      end
+      if pass then
+        cache[comboname].all[id] = set
+        cache[comboname].changed[id] = set
+      end
+    end
+  end
+end
+local addcombo = function(querykey)
+  if string.find(querykey, '_') then
+    local t = {}
+    for str in string.gmatch(querykey, '([^_]+)') do
+      table.insert(t, str)
+    end
+    for _, v in ipairs(t) do
+      ensureindex(v)
+      cache[v].combos[querykey] = t
+    end
+  end
+end
 setmetatable(
   _G,
   {
@@ -35,72 +76,64 @@ setmetatable(
         setmetatable(
           proxy,
           {
-            __newindex = function(_, i, v)
-              if v then
-                e[i] = v
-                if not cache[i] then
-                  cache[i] = {}
-                end
-                cache[i][id] = proxy
-                if not changedcache[i] then
-                  changedcache[i] = {}
-                end
-                changedcache[i][id] = proxy
-              else
-                e[i] = nil
-                cache[i][id] = nil
-                changedcache[i][id] = nil
-                for _, t in pairs(passes) do
-                  local a = t[id]
-                  if a then
-                    t[id] = nil
-                    a.instance:Destroy()
+            __newindex = function(_, querykey, v)
+              e[querykey] = v
+              ensureindex(querykey)
+              if v == nil then
+                writeindex(querykey, id, nil)
+                local a = cache[querykey].instances
+                if a then
+                  for _, t in pairs(a) do
+                    local a = t[id]
+                    if a then
+                      t[id] = nil
+                      a.instance:Destroy()
+                    end
                   end
                 end
+              else
+                writeindex(querykey, id, proxy)
               end
             end,
             __index = e
           }
         )
-        for i in pairs(e) do
-          if not cache[i] then
-            cache[i] = {}
-          end
-          cache[i][id] = proxy
-          if not changedcache[i] then
-            changedcache[i] = {}
-          end
-          changedcache[i][id] = proxy
+        for querykey in pairs(e) do
+          ensureindex(querykey)
+          writeindex(querykey, id, proxy)
         end
       else
-        warn('rbxpure: creation of entities is forbidden while pure')
+        warn('rodec: creation of entities is forbidden while pure')
       end
     end,
-    __newindex = function(_, i, v)
+    __newindex = function(_, querykey, v)
       if canedit then
         if type(v) == 'function' then
-          if not purecallbacks[i] then
-            purecallbacks[i] = {}
+          if not cache[querykey] then
+            mkindex(querykey)
+            addcombo(querykey)
           end
-          table.insert(purecallbacks[i], v)
+          table.insert(cache[querykey].callbacks, v)
         elseif v == true then
         elseif v == nil then
-          purecallbacks[i] = {}
+          ensureindex(querykey)
+          cache[querykey].callbacks = {}
         else
-          warn('rbxpure: cannot assign a value of that type to _G:', i)
+          warn('rodec: cannot assign a value of that type to _G:', querykey)
         end
       else
-        warn('rbxpure: _G assignments are forbidden while pure:', i)
+        warn('rodec: _G assignments are forbidden while pure:', querykey)
       end
     end,
-    __index = function(_, i)
+    __index = function(_, querykey)
       if canedit then
-        if not cache[i] then
-          cache[i] = {}
+        if not cache[querykey] then
+          mkindex(querykey)
+          addcombo(querykey)
         end
-        return cache[i]
+        return cache[querykey].all
       else
-        warn('rbxpure: access to _G is forbidden while pure:', i)
+        warn('rodec: access to _G is forbidden while pure:', querykey)
       end
     end
   }
@@ -221,23 +254,21 @@ game:GetService('RunService'):BindToRenderStep(
       v()
     end
     canedit = false
-    for cacheid, t in pairs(changedcache) do
-      if purecallbacks[cacheid] then
-        for _, f in ipairs(purecallbacks[cacheid]) do
-          local functionid = tostring(f)
-          for entityid, v in pairs(t) do
-            if not passes[functionid] then
-              passes[functionid] = {}
-            end
-            if not passes[functionid][entityid] then
-              passes[functionid][entityid] = {}
-            end
-            draw(f(v), passes[functionid][entityid])
+    for _, t in pairs(cache) do
+      for _, f in ipairs(t.callbacks) do
+        local functionid = tostring(f)
+        for entityid, v in pairs(t.changed) do
+          if not t.instances[functionid] then
+            t.instances[functionid] = {}
           end
+          if not t.instances[functionid][entityid] then
+            t.instances[functionid][entityid] = {}
+          end
+          draw(f(v), t.instances[functionid][entityid])
         end
       end
+      t.changed = {}
     end
-    changedcache = {}
     for i in pairs(_G) do
       if i:sub(1, 1) == '_' then
         _G[i] = 0
@@ -247,11 +278,28 @@ game:GetService('RunService'):BindToRenderStep(
 )
 ----------------------------------------------------------------
 do
+  local allglobals = {}
+  local allfenv = {}
   for _, descendant in pairs(script:GetDescendants()) do
     if descendant.ClassName == 'ModuleScript' then
-      local f = require(descendant)
-      if f then
-        table.insert(callbacks, f)
+      local fenv = require(descendant)
+      if fenv then
+        for i, v in pairs(fenv) do
+          if i == 'main' then
+            table.insert(callbacks, v)
+          end
+          if not allglobals[i] then
+            allglobals[i] = v
+          end
+          table.insert(allfenv, fenv)
+        end
+      end
+    end
+  end
+  for _, fenv in pairs(allfenv) do
+    for i, v in pairs(allglobals) do
+      if not fenv[i] then
+        fenv[i] = v
       end
     end
   end

@@ -1,4 +1,4 @@
-return function()
+clickbutton = function()
   if _G.frame == 0 then
     _G.singleton = function(v)
       return {
@@ -45,18 +45,7 @@ return function()
           }
         }
     end
-    _G.pointx = function(v)
-      return {
-        ClassName = 'Frame',
-        Parent = game.Players.LocalPlayer.PlayerGui.ScreenGui,
-        Size = UDim2.new(0, 20, 0, 20),
-        Position = UDim2.new(0, v.pointx, 0, v.pointy)
-      }
-    end
     _G({singleton = true})
-  end
-  if _G.mousebutton1 == 1 then
-    _G({pointx = _G.mousemovementx, pointy = _G.mousemovementy})
   end
   if _G.frame == 1 then
     _G({count = 0})
@@ -65,3 +54,4 @@ return function()
     _G({count = 3})
   end
 end
+return getfenv(0)

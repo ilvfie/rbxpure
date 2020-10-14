@@ -5,7 +5,7 @@
         "ReplicatedFirst": {
             "$className": "ReplicatedFirst",
             "": {
-                "$path": "rbxpure.client.lua",
+                "$path": "rodec.client.lua",
                 "": {
                     "$path": "examples"
                 }
@@ -14,7 +14,7 @@
         "ServerScriptService": {
             "$className": "ServerScriptService",
             "": {
-                "$path": "rbxpure.server.lua"
+                "$path": "rodec.server.lua"
             }
         }
     }
