@@ -1,0 +1,37 @@
+{
+    "Lua.runtime.version": "Lua 5.1",
+    "Lua.diagnostics.disable": [
+        "lowercase-global"
+    ],
+    "Lua.diagnostics.globals": [
+        "Vector2",
+        "Vector3",
+        "UDim2",
+        "UDim",
+        "game",
+        "Instance",
+        "script",
+        "Color3",
+        "Enum",
+        "wait",
+        "warn",
+        "unpack",
+        "typeof",
+        "newproxy",
+        "tick"
+    ],
+    "Lua.workspace.useGitIgnore": false,
+    "lua.format.indentCount": 2,
+    "lua.format.singleQuote": true,
+    "lua.format.lineWidth": 1000,
+    "editor.acceptSuggestionOnEnter": "off",
+    "editor.formatOnSave": true,
+    "explorer.compactFolders": false,
+    "explorer.confirmDelete": false,
+    "editor.wordWrap": "on",
+    "git.enableSmartCommit": true,
+    "explorer.confirmDragAndDrop": false,
+    "rojo.pluginManagement": true,
+    "editor.snippetSuggestions": "none",
+    "git.confirmSync": false,
+}

@@ -51,14 +51,14 @@ magn = function()
   end
   for _, v in pairs(_G.redtag) do
     v.redtag = nil
-    v.instance.BackgroundColor3 = Color3.new()
+    v.isred = false
   end
   for x = sx - d, sx + d do
     for y = sy - d, sy + d do
       for _, v in pairs(_G[getkey(x, y)]) do
         if (v.pos - cur).Magnitude < radius then
           v.redtag = true
-          v.instance.BackgroundColor3 = Color3.new(1, 0, 0)
+          v.isred = true
         end
       end
     end

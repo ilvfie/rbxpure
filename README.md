@@ -15,4 +15,6 @@ Using Roblox Studio's command bar:
 game:GetService("HttpService").HttpEnabled = true
 loadstring(game:GetService("HttpService"):GetAsync("https://raw.githubusercontent.com/ilvfie/rodec/master/install.lua"))()
 ```
+Alternatively:
+This project is maintained with vscode/rojo, and when cloned, can be used with all the required extensions/settings.
 ## Example
