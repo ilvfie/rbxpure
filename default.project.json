@@ -1,21 +1,21 @@
 {
-    "name": "",
-    "tree": {
-        "$className": "DataModel",
-        "ReplicatedFirst": {
-            "$className": "ReplicatedFirst",
-            "": {
-                "$path": "rodec.client.lua",
-                "": {
-                    "$path": "examples"
-                }
-            }
-        },
-        "ServerScriptService": {
-            "$className": "ServerScriptService",
-            "": {
-                "$path": "rodec.server.lua"
-            }
+  "name": "",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedFirst": {
+      "$className": "ReplicatedFirst",
+      "": {
+        "$path": "rodec.client.lua",
+        "": {
+          "$path": "project"
         }
+      }
+    },
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "": {
+        "$path": "rodec.server.lua"
+      }
     }
+  }
 }

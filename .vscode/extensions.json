@@ -1,7 +1,7 @@
 {
-    "recommendations": [
-        "sumneko.lua",
-        "evaera.vscode-rojo",
-        "trixnz.vscode-lua",
-    ],
+  "recommendations": [
+    "sumneko.lua",
+    "evaera.vscode-rojo",
+    "trixnz.vscode-lua"
+  ],
 }
