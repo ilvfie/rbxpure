@@ -6,7 +6,7 @@
   "editor.acceptSuggestionOnEnter": "off",
   "git.decorations.enabled": false,
   "rojo.pluginManagement": true,
-  "Lua.runtime.version": "Luau",
+  "Lua.runtime.version": "Lua 5.1",
   "Lua.workspace.useGitIgnore": false,
   "editor.lineHeight": 15,
   "lua.format.lineWidth": 1000,
