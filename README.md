@@ -5,7 +5,7 @@
 <div align="center">a declarative framework for roblox</div>
 <br>
 <div align="center">
-	<a href="https://discord.gg/kP7U9Mj"><img src="https://discordapp.com/api/guilds/476080952636997633/embed.png" alt="discord" /></a>
+	<a href="https://discord.gg/kP7U9Mj"><img src="https://discordapp.com/api/guilds/412448235890802710/embed.png" alt="discord" /></a>
 </div>
 <div>&nbsp;</div>
 
@@ -18,3 +18,7 @@ loadstring(game:GetService("HttpService"):GetAsync("https://raw.githubuserconten
 Alternatively:
 This project is maintained with vscode/rojo, and when cloned, can be used with all the required extensions/settings.
 ## Example
+
+
+
+

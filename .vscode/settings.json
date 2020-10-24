@@ -6,13 +6,14 @@
   "editor.acceptSuggestionOnEnter": "off",
   "git.decorations.enabled": false,
   "rojo.pluginManagement": true,
-  "Lua.runtime.version": "Lua 5.1",
+  "Lua.runtime.version": "Luau",
   "Lua.workspace.useGitIgnore": false,
   "editor.lineHeight": 15,
   "lua.format.lineWidth": 1000,
   "Lua.diagnostics.disable": [
     "lowercase-global",
-    "redefined-local"
+    "redefined-local",
+    "redundant-parameter"
   ],
   "Lua.diagnostics.globals": [
     "CFrame",
